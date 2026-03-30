@@ -1,0 +1,23 @@
+{
+  "name": "reachy_mini_phone_teleop",
+  "version": "1.0.0",
+  "description": "--- title: Reachy Mini Phone Teleop emoji: 📱 colorFrom: red colorTo: blue sdk: static pinned: false short_description: Control Reachy Mini with your Phone ! tags:  - reachy_mini  - reachy_mini_python_app ---",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/S-Gemmin/rm-teleoperation.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/S-Gemmin/rm-teleoperation/issues"
+  },
+  "homepage": "https://github.com/S-Gemmin/rm-teleoperation#readme",
+  "devDependencies": {
+    "prettier": "^3.8.1"
+  }
+}

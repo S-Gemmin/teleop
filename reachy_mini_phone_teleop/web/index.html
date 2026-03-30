@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+		<title>Reachy Mini Teleop</title>
+		<link rel="stylesheet" href="/static/styles.css" />
+		<script type="importmap">
+		{
+			"imports": {
+				"three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+				"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/",
+				"urdf-loader": "https://cdn.jsdelivr.net/npm/urdf-loader@0.12.3/+esm"
+			}
+		}
+		</script>
+	</head>
+
+	<body>
+		<img id="video-background" />
+		<div id="video-error">Camera Not Available</div>
+		<div id="robot-viewer"></div>
+
+		<div id="rotate-overlay">↻ ROTATE DEVICE</div>
+
+		<div id="app">
+			<div class="joystick" id="left"><div class="handle"></div></div>
+			<div id="ping-display"></div>
+			<button id="fullscreen-btn">⛶</button>
+			<div id="head-toggle">HEAD</div>
+			<div class="joystick" id="right"><div class="handle"></div></div>
+		</div>
+
+		<div id="actions-bar">
+			<button class="action-btn" data-action="YES">✅ YES</button>
+			<button class="action-btn" data-action="NO">❌ NO</button>
+			<button class="action-btn" data-action="HAPPY">😊 HAPPY</button>
+			<button class="action-btn" data-action="SAD">😢 SAD</button>
+			<button class="action-btn" data-action="LAUGH">😂 LAUGH</button>
+			<button class="action-btn" data-action="WOW">😮 WOW</button>
+			<button class="action-btn" data-action="LIMP">💤 LIMP</button>
+			<button class="action-btn" data-action="CONFUSED">🤔 CONFUSED</button>
+			<button class="action-btn" data-action="ALIGN">🎯 ALIGN</button>
+			<button class="action-btn" data-action="RESET">🔄 RESET</button>
+		</div>
+
+		<script type="module" src="/static/App.js"></script>
+	</body>
+</html>
