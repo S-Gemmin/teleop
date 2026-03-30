@@ -11,3 +11,7 @@ __pycache__/
 *.pyd
 *.egg-info/
 
+.DS_Store
+package-lock.json
+reachy_mini_phone_teleop/data/control_logs/
+
