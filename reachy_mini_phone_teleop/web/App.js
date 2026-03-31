@@ -31,10 +31,22 @@ class TeleopApp {
 			turnLeft: false,
 			turnRight: false,
 			keysPressed: {},
+			mode: null,
 		};
 
 		this.leftJoystick = null;
 		this.rightJoystick = null;
+	}
+
+	startApp(mode) {
+		document.getElementById("mode-select").style.display = "none";
+		this.state.mode = mode;
+
+		if (mode === "laptop") {
+			this.initVideo();
+		} else {
+			this.initJoysticks();
+		}
 
 		this.wsProtocol = location.protocol === "https:" ? "wss:" : "ws:";
 		this.socket = new WebSocket(this.wsProtocol + "//" + location.host + "/ws");
@@ -71,6 +83,14 @@ class TeleopApp {
 				}
 			},
 		});
+
+		this.initFullscreen();
+		this.initKeyboard();
+		this.actionHandler.init(headToggle);
+		if (mode === "mobile") this.initDeviceOrientation();
+		this.startPing();
+		if (mode === "laptop") this.initRobotViewer();
+		this.loop();
 	}
 
 	async measurePing() {
@@ -145,6 +165,11 @@ class TeleopApp {
 	}
 
 	loop() {
+		if (this.state.mode !== "mobile") {
+			requestAnimationFrame(() => this.loop());
+			return;
+		}
+
 		const now = performance.now();
 		const dt = (now - this.lastFrameTime) / 1000;
 		this.lastFrameTime = now;
@@ -169,9 +194,7 @@ class TeleopApp {
 		this.state.pitch += pitchDelta;
 		this.state.yaw += yawDelta;
 
-		const blocked = window.innerHeight > window.innerWidth;
-
-		if (this.state.connected && this.socket.readyState === WebSocket.OPEN && !blocked && !this.state.actionRunning) {
+		if (this.state.connected && this.socket.readyState === WebSocket.OPEN && !this.state.actionRunning) {
 			this.socket.send(
 				JSON.stringify({
 					type: "pose",
@@ -221,17 +244,11 @@ class TeleopApp {
 	}
 
 	run() {
-		this.initVideo();
-		this.initJoysticks();
-		this.initFullscreen();
-		this.initKeyboard();
-		this.actionHandler.init(headToggle);
-		this.initDeviceOrientation();
-		this.startPing();
-		this.initRobotViewer();
-		this.loop();
 	}
 }
 
 const app = new TeleopApp();
 app.run();
+
+window.startLaptopMode = () => app.startApp("laptop");
+window.startMobileMode = () => app.startApp("mobile");

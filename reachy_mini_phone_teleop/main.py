@@ -165,9 +165,7 @@ class ReachyMiniPhoneTeleop(ReachyMiniApp):
 
 		if mini.media is not None:
 			self._camera.start(mini.media)
-			print("Camera streaming started.")
-		else:
-			print("Camera disabled.")
+			print("Camera streaming started")
 
 		self._control_thread = threading.Thread(
 			target=self._control_loop,

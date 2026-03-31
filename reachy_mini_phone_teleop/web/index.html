@@ -23,6 +23,12 @@
 
 		<div id="rotate-overlay">↻ ROTATE DEVICE</div>
 
+		<div id="mode-select" style="display: flex; position: fixed; inset: 0; background: #111; z-index: 9999; flex-direction: column; align-items: center; justify-content: center; gap: 20px;">
+			<h2 style="color: #fff; font-family: sans-serif;">Select Mode</h2>
+			<button id="btn-laptop" onclick="window.startLaptopMode()" style="padding: 20px 40px; font-size: 18px; cursor: pointer; touch-action: manipulation;">Laptop (Camera + No Control)</button>
+			<button id="btn-mobile" onclick="window.startMobileMode()" style="padding: 20px 40px; font-size: 18px; cursor: pointer; touch-action: manipulation;">Mobile (Control + No Camera)</button>
+		</div>
+
 		<div id="app">
 			<div class="joystick" id="left"><div class="handle"></div></div>
 			<div id="ping-display"></div>
