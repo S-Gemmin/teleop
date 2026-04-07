@@ -95,37 +95,22 @@ class ReachyMiniPhoneTeleop(ReachyMiniApp):
 					status_code=409
 				)
 			
-			# Check if it's a category
-			if action_name in actions.CATEGORIES:
-				self._controller.action_running = True
-				
-				def execute():
-					try:
-						actions.play_category(mini, action_name)
-					finally:
-						self._controller.action_running = False
-				
-				threading.Thread(target=execute, daemon=True).start()
-				return JSONResponse({"status": "started", "category": action_name})
-			
-			# Check if it's a regular action
-			if action_name not in actions.ACTIONS:
+			if action_name not in actions.CATEGORIES:
 				return JSONResponse(
-					{"error": f"Unknown action: {action_name}"},
+					{"error": f"Unknown category: {action_name}. Use play_category() with: {list(actions.CATEGORIES.keys())}"},
 					status_code=status.HTTP_400_BAD_REQUEST,
 				)
 
 			self._controller.action_running = True
-			action_func = getattr(actions, action_name)
-
+			
 			def execute():
 				try:
-					action_func(mini)
+					actions.play_category(mini, action_name)
 				finally:
 					self._controller.action_running = False
-
+			
 			threading.Thread(target=execute, daemon=True).start()
-			return JSONResponse({"status": "started", "action": action_name})
+			return JSONResponse({"status": "started", "category": action_name})
 
 		@app.get("/robot_state")
 		async def get_robot_state():
