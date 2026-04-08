@@ -1,203 +1,118 @@
-"""
-Reachy Mini animations.
-
-Usage:
-    python actions.py <action>
-    python actions.py --help
-"""
+import threading
+import random
 
 from reachy_mini import ReachyMini
-from reachy_mini.utils import create_head_pose
 from scipy.spatial.transform import Rotation
 import numpy as np
 import time
-import random
-import argparse
-import threading
 
 from reachy_mini_phone_teleop.action_library import ActionLibrary, ActionMove
 
-
-_actions = None
-_action_lock = threading.Lock()
-
-def is_action_running() -> bool:
-    if _action_lock.acquire(blocking=False):
-        _action_lock.release()
-        return False
-
-    return True
-
-def get_actions():
-    global _actions
-    if _actions is None:
-        _actions = ActionLibrary()
-    return _actions
-
-# limp, reset, align are 'handmade'
-CATEGORIES = {
+ACTIONS = {
     "LIMP": [],
-    "YES": ["yes1", "yes_sad1"],
-    "NO": ["no1", "no_excited1", "no_sad1"],
+    "NO": ["no1"],
     "RESET": [],
-    "CONFUSED": ["confused1", "lost1", "uncertain1", "curious1"],
-    "WOW": ["surprised1", "surprised2"],
-    "HAPPY": ["success1", "cheerful1", "enthusiastic1"],
-    "SAD": ["sad1", "fear1", "scared1"],
+    "SURPRISED": ["surprised1", "surprised2"],
+    "HAPPY": ["success1", "cheerful1"],
+    "SAD": ["sad1"],
     "ALIGN": [],
+    "WAVE": ["yes1"],
     "LAUGH": ["laughing1", "laughing2"],
 }
 
-# For backward compatibility with main.py endpoint check
-ACTIONS = [
-    "nod",
-    "shake",
-    "wave",
-    "thinking",
-    "sad",
-    "reset",
-    "align_body",
-    "limp",
-]
+_instance: "Actions | None" = None
 
 
-def save_state(mini):
-    head_joints, antennas = mini.get_current_joint_positions()
-    head_pose = mini.get_current_head_pose()
-    body_yaw = head_joints[0]
-    return {
-        'head_joints': head_joints,
-        'antennas': antennas,
-        'head_pose': head_pose,
-        'body_yaw': body_yaw
-    }
-
-def restore_state(mini, state):
-    mini.goto_target(
-        head=state['head_pose'],
-        antennas=state['antennas'],
-        body_yaw=None,
-        duration=1.0
-    )
+def init(mini: ReachyMini) -> None:
+    global _instance
+    _instance = Actions(mini)
 
 
-def nod(mini: ReachyMini):
-    align_body(mini)
-    state = save_state(mini)
-    for _ in range(2):
-        mini.goto_target(head=create_head_pose(pitch=-20, degrees=True), body_yaw=None, duration=0.5)
-        mini.goto_target(head=create_head_pose(pitch=20, degrees=True), body_yaw=None, duration=0.5)
-    mini.goto_target(head=create_head_pose(pitch=0, degrees=True), body_yaw=None, duration=0.5)
-    restore_state(mini, state)
+def is_action_running() -> bool:
+    if _instance is None:
+        return False
+    return _instance.is_running()
 
 
-def shake(mini: ReachyMini):
-    align_body(mini)
-    state = save_state(mini)
-    for _ in range(2):
-        mini.goto_target(head=create_head_pose(yaw=30, degrees=True), body_yaw=None, duration=0.3)
-        mini.goto_target(head=create_head_pose(yaw=-30, degrees=True), body_yaw=None, duration=0.3)
-    mini.goto_target(head=create_head_pose(yaw=0, degrees=True), body_yaw=None, duration=0.3)
-    restore_state(mini, state)
+def play(action_name: str) -> None:
+    if _instance is None:
+        return
+    _instance.play(action_name)
 
 
-def wave(mini: ReachyMini):
-    align_body(mini)
-    state = save_state(mini)
-    for _ in range(3):
-        mini.goto_target(antennas=np.deg2rad([-45, 45]), body_yaw=None, duration=0.3)
-        mini.goto_target(antennas=np.deg2rad([45, -45]), body_yaw=None, duration=0.3)
-    mini.goto_target(antennas=np.deg2rad([0, 0]), body_yaw=None, duration=0.3)
-    restore_state(mini, state)
+class Actions:
+    _action_lock = threading.Lock()
+    _running = False
 
+    def __init__(self, mini: ReachyMini):
+        self._mini = mini
+        self._actions = ActionLibrary()
+        self.reset()
 
-def thinking(mini: ReachyMini):
-    align_body(mini)
-    state = save_state(mini)
-    mini.goto_target(head=create_head_pose(roll=30, degrees=True), body_yaw=None, duration=2.0)
-    time.sleep(2.0)
-    mini.goto_target(head=create_head_pose(roll=0, degrees=True), body_yaw=None, duration=0.8)
-    restore_state(mini, state)
+    def is_running(self) -> bool:
+        return self._running
 
-
-def sad(mini: ReachyMini):
-    align_body(mini)
-    state = save_state(mini)
-    mini.goto_target(head=create_head_pose(pitch=30, degrees=True), antennas=np.deg2rad([-170, 170]), body_yaw=None, duration=1.0)
-    time.sleep(4.0)
-    mini.goto_target(head=create_head_pose(pitch=0, degrees=True), antennas=np.deg2rad([0, 0]), body_yaw=None, duration=1.0)
-    restore_state(mini, state)
-
-
-def reset(mini: ReachyMini) -> None:
-    mini.goto_target(head=np.eye(4), antennas=np.deg2rad([0, 0]), body_yaw=0, duration=1.0)
-
-
-def align_body(mini: ReachyMini) -> None:
-    head_pose = mini.get_current_head_pose()
-    r = Rotation.from_matrix(head_pose[:3, :3])
-    _, _, yaw = r.as_euler("xyz")
-    mini.goto_target(body_yaw=yaw, duration=0.5)
-    time.sleep(0.5)
-
-
-def limp(mini: ReachyMini):
-    mini.disable_motors()
-    time.sleep(3)
-    mini.enable_motors()
-
-
-def play_category(mini: ReachyMini, category: str) -> None:
-    """Play a random action from the specified category."""
-    if not _action_lock.acquire(blocking=False):
-        return  # Already running, skip
-    
-    try:
-        if category not in CATEGORIES:
-            print(f"Unknown category: {category}")
+    def play(self, action: str) -> None:
+        if not self._action_lock.acquire(blocking=False):
             return
-        
-        action_list = CATEGORIES[category]
-        
-        # Handle special categories that use existing functions
-        if category == "LIMP":
-            limp(mini)
-            return
-        if category == "RESET":
-            reset(mini)
-            return
-        if category == "ALIGN":
-            align_body(mini)
-            return
-        
-        # For HuggingFace actions
-        if not action_list:
-            print(f"No actions defined for category: {category}")
-            return
-        
-        actions = get_actions()
-        move_name = random.choice(action_list)
-        align_body(mini)
-        head_joints, _ = mini.get_current_joint_positions()
-        current_body_yaw = head_joints[0]
-        head_pose = mini.get_current_head_pose()
+
+        self._running = True
+        try:
+            self.align()
+            func = getattr(self, action.lower(), None)
+            if not func or not callable(func):
+                print(f"unknown action {action}")
+                return
+
+            func()
+        finally:
+            self._running = False
+            self._action_lock.release()
+
+    def align(self) -> None:
+        head_pose = self._mini.get_current_head_pose()
         r = Rotation.from_matrix(head_pose[:3, :3])
-        _, _, current_head_yaw = r.as_euler("xyz")
-        action_move = ActionMove(actions.get(move_name), current_head_yaw, current_body_yaw)
-        state = save_state(mini)
-        mini.play_move(action_move)
-        restore_state(mini, state)
-    finally:
-        _action_lock.release()
+        _, _, yaw = r.as_euler("xyz")
+        self._mini.goto_target(body_yaw=yaw, duration=0.5)
 
+    def _get_head_yaw(self) -> float:
+        head_pose = self._mini.get_current_head_pose()
+        r = Rotation.from_matrix(head_pose[:3, :3])
+        _, _, yaw = r.as_euler("xyz")
+        return yaw
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Reachy Mini animations")
-    parser.add_argument("action", choices=ACTIONS, help="Animation to play")
+    def _get_body_yaw(self) -> float:
+        head_joints, _ = self._mini.get_current_joint_positions()
+        return head_joints[0]
 
-    args = parser.parse_args()
-    func = globals()[args.action]
+    def _play_dataset(self, move_name: str) -> None:
+        head_yaw = self._get_head_yaw()
+        body_yaw = self._get_body_yaw()
+        action_move = ActionMove(self._actions.get(move_name), head_yaw, body_yaw)
+        self._mini.play_move(action_move)
 
-    with ReachyMini() as mini:
-        func(mini)
+    def limp(self) -> None:
+        self._mini.disable_motors()
+        time.sleep(3)
+        self._mini.enable_motors()
 
+    def no(self) -> None:
+        self._play_dataset(random.choice(ACTIONS["NO"]))
+
+    def reset(self) -> None:
+        self._mini.goto_target(head=np.eye(4), antennas=np.deg2rad([0, 0]), body_yaw=0, duration=1.0)
+
+    def surprised(self) -> None:
+        self._play_dataset(random.choice(ACTIONS["SURPRISED"]))
+
+    def happy(self) -> None:
+        self._play_dataset(random.choice(ACTIONS["HAPPY"]))
+
+    def sad(self) -> None:
+        self._play_dataset(random.choice(ACTIONS["SAD"]))
+
+    def wave(self) -> None:
+        self._play_dataset(random.choice(ACTIONS["WAVE"]))
+
+    def laugh(self) -> None:
+        self._play_dataset(random.choice(ACTIONS["LAUGH"]))

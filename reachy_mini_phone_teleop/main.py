@@ -95,9 +95,9 @@ class ReachyMiniPhoneTeleop(ReachyMiniApp):
 					status_code=409
 				)
 			
-			if action_name not in actions.CATEGORIES:
+			if action_name not in actions.ACTIONS:
 				return JSONResponse(
-					{"error": f"Unknown category: {action_name}. Use play_category() with: {list(actions.CATEGORIES.keys())}"},
+					{"error": f"Unknown action: {action_name}. Use actions: {list(actions.ACTIONS.keys())}"},
 					status_code=status.HTTP_400_BAD_REQUEST,
 				)
 
@@ -105,12 +105,12 @@ class ReachyMiniPhoneTeleop(ReachyMiniApp):
 			
 			def execute():
 				try:
-					actions.play_category(mini, action_name)
+					actions.play(action_name)
 				finally:
 					self._controller.action_running = False
 			
 			threading.Thread(target=execute, daemon=True).start()
-			return JSONResponse({"status": "started", "category": action_name})
+			return JSONResponse({"status": "started", "action": action_name})
 
 		@app.get("/robot_state")
 		async def get_robot_state():
@@ -127,7 +127,6 @@ class ReachyMiniPhoneTeleop(ReachyMiniApp):
 			}
 
 	def _control_loop(self, mini: ReachyMini, stop_event: threading.Event) -> None:
-		actions.reset(mini)
 		time.sleep(0.1)
 
 		interval = 1.0 / CONTROL_HZ
@@ -147,6 +146,7 @@ class ReachyMiniPhoneTeleop(ReachyMiniApp):
 
 	def run(self, mini: ReachyMini, stop_event: threading.Event):
 		self._stop_event = stop_event
+		actions.init(mini)
 
 		if mini.media is not None:
 			self._camera.start(mini.media)
