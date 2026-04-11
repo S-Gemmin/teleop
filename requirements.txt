@@ -1,0 +1,6 @@
+reachy-mini>=1.5.1
+teleop
+opencv-python
+scipy
+numpy
+fastapi
