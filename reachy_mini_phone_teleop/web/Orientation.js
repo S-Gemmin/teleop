@@ -28,9 +28,9 @@ export function multiplyQuaternion(a, b) {
 
 export function computeOrientation(alpha, beta, gamma) {
 	const d2r = Math.PI / 180;
-	const a = alpha * d2r;
-	const b = beta * d2r;
-	const g = gamma * d2r;
+	const a = (alpha || 0) * d2r;
+	const b = (beta || 0) * d2r;
+	const g = (gamma || 0) * d2r;
 
 	const c1 = Math.cos(a / 2), s1 = Math.sin(a / 2);
 	const c2 = Math.cos(b / 2), s2 = Math.sin(b / 2);

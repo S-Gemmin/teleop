@@ -15,7 +15,7 @@ dependencies = [
 keywords = ["reachy-mini-app"]
 
 [project.entry-points."reachy_mini_apps"]
-reachy-mini-phone-teleop = "reachy_mini_phone_teleop.app:ReachyMiniPhoneTeleop"
+reachy-mini-phone-teleop = "reachy_mini_phone_teleop.main:ReachyMiniPhoneTeleop"
 
 [tool.setuptools]
 package-dir = {"" = "."}

@@ -13,6 +13,9 @@ body {
 	overflow: hidden;
 	touch-action: none;
 	position: fixed;
+	-webkit-user-select: none;
+	user-select: none;
+	overscroll-behavior: none;
 }
 
 #video-background {
@@ -64,7 +67,7 @@ body {
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
-	padding: 28vh 6vw 6vw 6vw;
+	padding: 28vh env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
 	box-sizing: border-box;
 	z-index: 10;
 }
@@ -147,7 +150,7 @@ body {
 	right: 0;
 	display: flex;
 	justify-content: center;
-	padding: 8px 16px 0 16px;
+	padding: 8px max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
 	background: transparent;
 	z-index: 20;
 }

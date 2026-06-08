@@ -36,11 +36,18 @@ class TeleopApp {
 
 		this.leftJoystick = null;
 		this.rightJoystick = null;
+		this._motionGranted = false;
 	}
 
 	startApp(mode) {
-		document.getElementById("mode-select").style.display = "none";
 		this.state.mode = mode;
+
+		if (mode === "mobile" && this._needsMotionPermission()) {
+			this._showMotionPrompt();
+			return;
+		}
+
+		document.getElementById("mode-select").style.display = "none";
 
 		if (mode === "laptop") {
 			this.initVideo();
@@ -93,6 +100,34 @@ class TeleopApp {
 		this.loop();
 	}
 
+	_needsMotionPermission() {
+		return !this._motionGranted && this._isIOS();
+	}
+
+	_isIOS() {
+		return /iPhone|iPad|iPod/.test(navigator.userAgent);
+	}
+
+	_showMotionPrompt() {
+		const btn = document.getElementById("enable-motion");
+		btn.style.display = "inline-block";
+		btn.onclick = async () => {
+			try {
+				if (typeof DeviceOrientationEvent?.requestPermission === "function") {
+					await DeviceOrientationEvent.requestPermission();
+				}
+				if (typeof DeviceMotionEvent?.requestPermission === "function") {
+					await DeviceMotionEvent.requestPermission();
+				}
+			} catch (e) {
+				console.error(e);
+			}
+			this._motionGranted = true;
+			btn.style.display = "none";
+			this.startApp("mobile");
+		};
+	}
+
 	async measurePing() {
 		try {
 			const start = performance.now();
@@ -116,6 +151,12 @@ class TeleopApp {
 	}
 
 	initFullscreen() {
+		const isIPhone = /iPhone/.test(navigator.userAgent);
+		if (isIPhone) {
+			fullscreenBtn.style.display = "none";
+			return;
+		}
+
 		fullscreenBtn.addEventListener("click", () => {
 			const elem = document.documentElement;
 			if (!document.fullscreenElement) {
