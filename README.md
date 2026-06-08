@@ -6,3 +6,5 @@ source .venv/bin/activate
 pip install -r requirements.txt
 python -m reachy_mini_phone_teleop.main
 ```
+
+For IOS, make sure to use Safari!!!
