@@ -18,7 +18,7 @@ from teleop import Teleop
 from reachy_mini_phone_teleop.camera import CameraStreaming
 from reachy_mini_phone_teleop.controller import TeleopController
 from reachy_mini_phone_teleop.logger import Logger
-from reachy_mini_phone_teleop.constants import CONTROL_HZ
+from reachy_mini_phone_teleop.constants import CONTROL_HZ, ROTATION_CLIP_RAD
 from reachy_mini_phone_teleop import actions
 
 
@@ -87,6 +87,13 @@ class ReachyMiniPhoneTeleop(ReachyMiniApp):
 			@app.get("/ping")
 			async def ping():
 				return JSONResponse({"pong": time.time()})
+
+			@app.get("/teleop_state")
+			async def get_teleop_state():
+				return JSONResponse({
+					"yaw": self._controller.rotation[2].item(),
+					"yaw_limit": ROTATION_CLIP_RAD[2].item(),
+				})
 
 		@app.post("/action/{action_name}")
 		async def run_action(action_name: str):

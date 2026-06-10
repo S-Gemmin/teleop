@@ -37,23 +37,18 @@ class TeleopApp {
 
 		this.leftJoystick = null;
 		this.rightJoystick = null;
-		this._motionGranted = false;
 	}
 
 	startApp(mode) {
 		this.state.mode = mode;
-
-		if (mode === "mobile" && this._needsMotionPermission()) {
-			this._showMotionPrompt();
-			return;
-		}
-
 		document.getElementById("mode-select").style.display = "none";
 
 		if (mode === "laptop") {
 			this.initVideo();
+			this._setLaptopVisibility(true);
 		} else {
 			this.initJoysticks();
+			this._setLaptopVisibility(false);
 		}
 
 		this.wsProtocol = location.protocol === "https:" ? "wss:" : "ws:";
@@ -109,32 +104,13 @@ class TeleopApp {
 		this.loop();
 	}
 
-	_needsMotionPermission() {
-		return !this._motionGranted && this._isIOS();
-	}
-
-	_isIOS() {
-		return /iPhone|iPad|iPod/.test(navigator.userAgent);
-	}
-
-	_showMotionPrompt() {
-		const btn = document.getElementById("enable-motion");
-		btn.style.display = "inline-block";
-		btn.onclick = async () => {
-			try {
-				if (typeof DeviceOrientationEvent?.requestPermission === "function") {
-					await DeviceOrientationEvent.requestPermission();
-				}
-				if (typeof DeviceMotionEvent?.requestPermission === "function") {
-					await DeviceMotionEvent.requestPermission();
-				}
-			} catch (e) {
-				console.error(e);
-			}
-			this._motionGranted = true;
-			btn.style.display = "none";
-			this.startApp("mobile");
-		};
+	_setLaptopVisibility(isLaptop) {
+		const display = isLaptop ? "none" : "";
+		document.getElementById("actions-bar").style.display = display;
+		headToggle.style.display = display;
+		for (const el of document.querySelectorAll(".joystick")) {
+			el.style.display = display;
+		}
 	}
 
 	async measurePing() {
@@ -143,6 +119,7 @@ class TeleopApp {
 			await fetch("/ping");
 			const ping = Math.round(performance.now() - start);
 			pingDisplay.textContent = ping > 0 ? "P:" + ping + "ms" : "P:--";
+			pingDisplay.style.color = ping < 50 ? "#4ecdc4" : ping < 150 ? "#f0c040" : "#ff4444";
 		} catch (e) {
 			pingDisplay.textContent = "P:--";
 		}
@@ -212,6 +189,25 @@ class TeleopApp {
 
 	startPing() {
 		setInterval(() => this.measurePing(), 1000);
+		setInterval(() => this.measureState(), 500);
+	}
+
+	async measureState() {
+		try {
+			const response = await fetch("/teleop_state");
+			const data = await response.json();
+			const deg = (data.yaw * (180 / Math.PI)).toFixed(0);
+			const pct = Math.min(100, Math.round(Math.abs(data.yaw) / data.yaw_limit * 100));
+			let color = pct < 60 ? "#4ecdc4" : pct < 90 ? "#f0c040" : pct < 100 ? "#f08040" : "#ff4444";
+			const el = document.getElementById("state-display");
+			if (this.state.mode === "laptop") {
+				el.style.display = "block";
+				el.textContent = `Y: ${deg}°  ${pct}%`;
+				el.style.color = color;
+			} else {
+				el.style.display = "none";
+			}
+		} catch (e) {}
 	}
 
 	loop() {
@@ -302,4 +298,16 @@ const app = new TeleopApp();
 app.run();
 
 window.startLaptopMode = () => app.startApp("laptop");
-window.startMobileMode = () => app.startApp("mobile");
+window.startMobileMode = async () => {
+	if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
+		try {
+			if (typeof DeviceOrientationEvent?.requestPermission === "function") {
+				await DeviceOrientationEvent.requestPermission();
+			}
+			if (typeof DeviceMotionEvent?.requestPermission === "function") {
+				await DeviceMotionEvent.requestPermission();
+			}
+		} catch (e) {}
+	}
+	app.startApp("mobile");
+};

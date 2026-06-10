@@ -145,12 +145,12 @@ body {
 
 #actions-bar {
 	position: fixed;
-	bottom: 0;
+	bottom: 14px;
 	left: 0;
 	right: 0;
 	display: flex;
 	justify-content: center;
-	padding: 8px 16px;
+	padding: 8px 16px 0 16px;
 	background: transparent;
 	z-index: 20;
 }
@@ -175,15 +175,6 @@ body {
 	align-items: center;
 	justify-content: center;
 	gap: 2px;
-}
-
-.action-btn:first-child {
-	border-radius: 8px 0 0 0;
-}
-
-.action-btn:last-child {
-	border-radius: 0 8px 0 0;
-	border-right: 2px solid rgba(30, 35, 43, 0.8);
 }
 
 .action-btn:active {
@@ -212,4 +203,17 @@ body {
 #robot-viewer canvas {
 	width: 100% !important;
 	height: 100% !important;
+}
+
+#state-display {
+	position: fixed;
+	bottom: 6px;
+	left: 10px;
+	font-size: 13px;
+	letter-spacing: 0.05em;
+	font-family: ui-monospace, monospace;
+	background: transparent;
+	z-index: 30;
+	display: none;
+	pointer-events: none;
 }
