@@ -27,8 +27,9 @@ class ReachyMiniPhoneTeleop(ReachyMiniApp):
 	dont_start_webserver: bool = True
 	_web_root: Path = Path(__file__).parent / "web"
 
-	def __init__(self, logger: Logger | None = None):
-		self.request_media_backend = "default"
+	def __init__(self, logger: Logger | None = None, sim: bool = False):
+		self.request_media_backend = "no_media" if sim else "default"
+		self._sim = sim
 		super().__init__()
 
 		self._logger = logger
@@ -148,7 +149,10 @@ class ReachyMiniPhoneTeleop(ReachyMiniApp):
 		self._stop_event = stop_event
 		actions.init(mini)
 
-		if mini.media is not None:
+		if self._sim:
+			self._camera.start(use_webcam=True)
+			print("Webcam streaming started (sim mode)")
+		elif mini.media is not None:
 			self._camera.start(mini.media)
 			print("Camera streaming started")
 
@@ -183,6 +187,7 @@ class ReachyMiniPhoneTeleop(ReachyMiniApp):
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description="Reachy Mini Phone Teleop")
 	parser.add_argument("--record", action="store_true", help="Enable data logging")
+	parser.add_argument("--sim", action="store_true", help="Use laptop webcam instead of robot camera (for MuJoCo sim)")
 	args = parser.parse_args()
 
 	logger = None
@@ -193,7 +198,7 @@ if __name__ == "__main__":
 		print(f"Recording to: {output_path}")
 
 	mp.set_start_method("spawn", force=True)
-	app = ReachyMiniPhoneTeleop(logger=logger)
+	app = ReachyMiniPhoneTeleop(logger=logger, sim=args.sim)
 	try:
 		app.wrapped_run()
 	except Exception as e:

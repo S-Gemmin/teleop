@@ -12,12 +12,13 @@ class CameraStreaming:
 		self._frame_thread = None
 		self._frame_stop_event = None
 		self._warned_frame_none = False
+		self._webcam_cap = None
 
-	def start(self, media) -> None:
+	def start(self, media=None, use_webcam=False) -> None:
 		self._frame_stop_event = threading.Event()
 		self._frame_thread = threading.Thread(
 			target=self._capture_frames,
-            args=(media,),
+            args=(media, use_webcam),
             daemon=True
 		)
 		self._frame_thread.start()
@@ -27,15 +28,32 @@ class CameraStreaming:
 			self._frame_stop_event.set()
 		if self._frame_thread:
 			self._frame_thread.join(timeout=2)
+		if self._webcam_cap is not None:
+			self._webcam_cap.release()
+			self._webcam_cap = None
 
-	def _capture_frames(self, media) -> None:
+	def _capture_frames(self, media, use_webcam) -> None:
 		frame_interval = 1.0 / self._target_fps
+
+		if use_webcam:
+			self._webcam_cap = cv2.VideoCapture(0)
+			if not self._webcam_cap.isOpened():
+				print("Warning: Could not open webcam")
+				self._webcam_cap = None
 
 		while not self._frame_stop_event.is_set():
 			t_start = time.monotonic()
 
 			try:
-				frame = media.get_frame()
+				if use_webcam and self._webcam_cap is not None:
+					ret, frame = self._webcam_cap.read()
+					if not ret:
+						frame = None
+				elif media is not None:
+					frame = media.get_frame()
+				else:
+					frame = None
+
 				if frame is not None:
 					_, encoded = cv2.imencode(
 						".jpg",
@@ -56,6 +74,10 @@ class CameraStreaming:
 			sleep_time = frame_interval - elapsed
 			if sleep_time > 0:
 				time.sleep(sleep_time)
+
+		if self._webcam_cap is not None:
+			self._webcam_cap.release()
+			self._webcam_cap = None
 
 	def generate_mjpeg(self):
 		frame_interval = 1.0 / self._target_fps
