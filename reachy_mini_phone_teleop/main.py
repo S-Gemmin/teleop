@@ -108,8 +108,9 @@ class ReachyMiniPhoneTeleop(ReachyMiniApp):
 				try:
 					actions.play(action_name)
 				finally:
+					self._controller.reset_after_action(self._mini)
 					self._controller.action_running = False
-			
+
 			threading.Thread(target=execute, daemon=True).start()
 			return JSONResponse({"status": "started", "action": action_name})
 

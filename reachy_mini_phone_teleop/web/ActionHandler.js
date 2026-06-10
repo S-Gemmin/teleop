@@ -17,7 +17,7 @@ export class ActionHandler {
 		const action = btn.dataset.action;
 		if (!action) return;
 
-		this.onActionStart();
+		this.onActionStart(action);
 		btn.disabled = true;
 
 		try {

@@ -32,8 +32,6 @@ class TeleopApp {
 			turnRight: false,
 			keysPressed: {},
 			mode: null,
-			savedRoll: 0,
-			savedPitch: 0,
 			savedYaw: 0,
 		};
 
@@ -66,9 +64,13 @@ class TeleopApp {
 		this.lastFrameTime = performance.now();
 
 		this.actionHandler = new ActionHandler({
-			onActionStart: () => {
+			onActionStart: (actionName) => {
 				this.state.actionRunning = true;
 				this.state.headActive = false;
+				if (actionName === "RESET") {
+					this.state.yaw = 0;
+					this.state.savedYaw = 0;
+				}
 				headToggle.classList.remove("active");
 			},
 			onActionEnd: () => {
@@ -76,8 +78,6 @@ class TeleopApp {
 			},
 			onHeadToggle: () => {
 				if (!this.state.headActive) {
-					this.state.savedRoll = this.state.roll;
-					this.state.savedPitch = this.state.pitch;
 					this.state.savedYaw = this.state.yaw;
 					this.state.baselineQuaternion = null;
 				}
@@ -204,8 +204,8 @@ class TeleopApp {
 			const delta = multiplyQuaternion(invertQuaternion(this.state.baselineQuaternion), q);
 			const euler = quaternionToEuler(delta);
 
-			this.state.roll = this.state.savedRoll - euler.pitch;
-			this.state.pitch = this.state.savedPitch + euler.roll;
+			this.state.roll = -euler.pitch;
+			this.state.pitch = euler.roll;
 			this.state.yaw = this.state.savedYaw + euler.yaw;
 		});
 	}
@@ -255,8 +255,9 @@ class TeleopApp {
 						leftJoystickInput: leftActive,
 						rightJoystickInput: rightActive,
 						antennas: [this.state.rightAntenna, this.state.leftAntenna],
-						head: [this.state.roll, this.state.pitch, this.state.yaw],
-						turnLeft: this.state.turnLeft,
+					head: [this.state.roll, this.state.pitch, this.state.yaw],
+					headActive: this.state.headActive,
+					turnLeft: this.state.turnLeft,
 						turnRight: this.state.turnRight,
 					},
 				})

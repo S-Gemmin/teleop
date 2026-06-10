@@ -109,13 +109,22 @@ class TeleopController:
 			self.antennas[1] = deadband(self.antennas[1], new_antenna[1], ANTENNA_DEADBAND)
 
 	def _update_head_rotation(self, message: dict) -> None:
-		if "head" not in message:
+		if "head" not in message or not message.get("headActive", False):
 			return
 
 		head = np.array(message.get("head", [0, 0, 0]))
 		new_rotation = np.clip(ROTATION_SCALE * head, -ROTATION_LIMIT, ROTATION_LIMIT)
 		new_rotation = smooth(self.rotation, new_rotation, ROTATION_SMOOTHING_ALPHA)
 		self.rotation = deadband(self.rotation, new_rotation, ROTATION_DEADBAND)
+
+	def reset_after_action(self, mini) -> None:
+		head_pose = mini.get_current_head_pose()
+		from scipy.spatial.transform import Rotation
+		r = Rotation.from_matrix(head_pose[:3, :3])
+		_, _, current_yaw = r.as_euler("xyz")
+		with self._state_lock:
+			self.rotation = np.array([0.0, 0.0, current_yaw])
+			self.antennas = np.zeros(2)
 
 	def _log_state(self, message: dict) -> None:
 		with self._state_lock:
