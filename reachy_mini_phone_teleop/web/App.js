@@ -32,6 +32,9 @@ class TeleopApp {
 			turnRight: false,
 			keysPressed: {},
 			mode: null,
+			savedRoll: 0,
+			savedPitch: 0,
+			savedYaw: 0,
 		};
 
 		this.leftJoystick = null;
@@ -72,6 +75,12 @@ class TeleopApp {
 				this.state.actionRunning = false;
 			},
 			onHeadToggle: () => {
+				if (!this.state.headActive) {
+					this.state.savedRoll = this.state.roll;
+					this.state.savedPitch = this.state.pitch;
+					this.state.savedYaw = this.state.yaw;
+					this.state.baselineQuaternion = null;
+				}
 				this.state.headActive = !this.state.headActive;
 				headToggle.classList.toggle("active", this.state.headActive);
 			},
@@ -195,9 +204,9 @@ class TeleopApp {
 			const delta = multiplyQuaternion(invertQuaternion(this.state.baselineQuaternion), q);
 			const euler = quaternionToEuler(delta);
 
-			this.state.roll = -euler.pitch;
-			this.state.pitch = euler.roll;
-			this.state.yaw = euler.yaw;
+			this.state.roll = this.state.savedRoll - euler.pitch;
+			this.state.pitch = this.state.savedPitch + euler.roll;
+			this.state.yaw = this.state.savedYaw + euler.yaw;
 		});
 	}
 
